@@ -1,0 +1,40 @@
+[tool.poetry]
+name = "meilisearch-embedding-proxy"
+version = "0.1.0"
+description = "a bypass way to connect meilisearch embedder and self-hosted openai format embedding server"
+authors = ["sherler <developerlmt@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [
+    {include = "meilisearch_embedding_proxy", from = "src"}
+]
+
+[[tool.poetry.source]]
+name = "ali"
+url = "https://mirrors.aliyun.com/pypi/simple/"
+priority = "primary"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.116.1"
+uvicorn = {extras = ["standard"], version = "^0.35.0"}
+requests = "^2.32.4"
+python-dotenv = "^1.1.1"
+openai = "^1.97.1"
+loguru = "^0.7.3"
+meilisearch = "^0.36.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+pytest-asyncio = "^0.24.0"
+httpx = "^0.28.0"
+black = "^24.0.0"
+isort = "^5.13.0"
+mypy = "^1.8.0"
+
+[tool.poetry.scripts]
+meilisearch_embedding_proxy = "meilisearch_embedding_proxy.cli:main"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
