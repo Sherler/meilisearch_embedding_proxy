@@ -43,7 +43,8 @@ API_KEY=your_siliconflow_api_key_here
 
 # Server Configuration (Optional with defaults)
 BASE_URL=https://api.siliconflow.cn/v1
-MODEL_NAME=BAAI/bge-large-zh-v1.5
+MODEL_NAME=Qwen/Qwen3-Embedding-0.6B
+EMBEDDING_DIMENSIONS=1024
 MAX_TOKEN_LIMIT=10000
 HOST=0.0.0.0
 PORT=8000
@@ -53,7 +54,6 @@ TIMEOUT=30
 # Meilisearch Configuration (Required for embedder features)
 MEILISEARCH_URL=http://127.0.0.1:7750
 MEILI_MASTER_KEY=your_master_key_here
-MEILI_ENV=development
 
 # Service URL (Used by Meilisearch embedder configuration)
 SERVICE_URL=http://embedding_proxy:8000

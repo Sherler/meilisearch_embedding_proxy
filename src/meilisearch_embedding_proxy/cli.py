@@ -83,7 +83,8 @@ def main():
 环境变量配置:
   API_KEY         - SiliconFlow API密钥 (必需)
   BASE_URL        - API基础URL (默认: https://api.siliconflow.cn/v1)
-  MODEL_NAME      - 模型名称 (默认: BAAI/bge-large-zh-v1.5)
+  MODEL_NAME      - 模型名称 (默认: Qwen/Qwen3-Embedding-0.6B)
+  EMBEDDING_DIMENSIONS  - 嵌入维度 (默认: 1024)
   MAX_TOKEN_LIMIT - 最大token限制 (默认: 10000)
   HOST            - 服务器主机 (默认: 0.0.0.0)
   PORT            - 服务器端口 (默认: 8000)

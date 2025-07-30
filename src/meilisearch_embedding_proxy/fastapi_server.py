@@ -192,6 +192,24 @@ def wait_task(client: meilisearch.Client, task_info) -> bool:
     
     return True
 
+def is_embedder_already_configured(embedders_config: Dict[str, Any], embedder_name: str, service_url: str, document_template: str) -> bool:
+    """
+    检查是否已经配置了相同的 embedder
+    """
+    if embedder_name not in embedders_config:
+        return False
+    
+    existing_config = embedders_config[embedder_name]
+    
+    # 检查关键配置是否匹配
+    return (
+        existing_config.get("source") == "rest" and
+        existing_config.get("url") == f"{service_url}/v1/embeddings" and
+        existing_config.get("documentTemplate") == document_template and
+        existing_config.get("dimensions") == config.dimensions and
+        existing_config.get("documentTemplateMaxBytes") == config.max_token_limit
+    )
+
 @app.post("/v1/meilisearch/embedder", response_model=MeilisearchConfigResponse)
 async def configure_meilisearch_embedder(request: MeilisearchConfigRequest):
     """
@@ -205,9 +223,47 @@ async def configure_meilisearch_embedder(request: MeilisearchConfigRequest):
         # 获取 Meilisearch 客户端
         client = get_meilisearch_client()
         
-        # 获取索引
-        index = client.get_index(request.index_id)
-        logger.info(f"成功获取索引: {request.index_id}")
+        # 检查索引是否存在
+        try:
+            index = client.get_index(request.index_id)
+            logger.info(f"成功获取索引: {request.index_id}")
+        except Exception as e:
+            if "index_not_found" in str(e).lower() or "404" in str(e):
+                logger.error(f"索引 '{request.index_id}' 不存在")
+                return MeilisearchConfigResponse(
+                    success=False,
+                    message=f"Index '{request.index_id}' does not exist. Please create the index first.",
+                    task_uid=None
+                )
+            else:
+                raise e
+        
+        # 获取现有的 embedder 配置
+        try:
+            existing_embedders = index.get_embedders()
+            if existing_embedders.embedders:
+                existing_embedders = existing_embedders.embedders
+            logger.info(f"当前索引已有 {len(existing_embedders)} 个 embedder")
+            
+            # 检查是否已经配置了相同的 embedder
+            if is_embedder_already_configured(
+                existing_embedders, 
+                request.embedder_name, 
+                config.service_url, 
+                request.document_template
+            ):
+                logger.info(f"Embedder '{request.embedder_name}' 已经配置且配置相同，跳过重复配置")
+                return MeilisearchConfigResponse(
+                    success=True,
+                    message=f"Embedder '{request.embedder_name}' is already configured with the same settings for index '{request.index_id}'",
+                    task_uid=None
+                )
+            elif request.embedder_name in existing_embedders:
+                logger.warning(f"Embedder '{request.embedder_name}' 已存在但配置不同，将覆盖现有配置")
+            
+        except Exception as e:
+            logger.warning(f"获取现有 embedder 配置失败，继续配置: {str(e)}")
+            existing_embedders = {}
         
         # 设置默认值
         document_template = request.document_template
@@ -295,6 +351,53 @@ async def get_meilisearch_tasks():
             detail=f"Failed to get tasks: {str(e)}"
         )
 
+@app.get("/v1/meilisearch/indexes/{index_id}/embedders")
+async def get_index_embedders(index_id: str):
+    """
+    获取指定索引的 embedder 配置
+    """
+    logger.info(f"获取索引 '{index_id}' 的 embedder 配置")
+    
+    try:
+        client = get_meilisearch_client()
+        
+        # 检查索引是否存在
+        try:
+            index = client.get_index(index_id)
+        except Exception as e:
+            if "index_not_found" in str(e).lower() or "404" in str(e):
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Index '{index_id}' not found"
+                )
+            else:
+                raise e
+        
+        # 获取 embedder 配置
+        embedders = index.get_embedders()
+        if embedders.embedders:
+            embedders = embedders.embedders
+        
+        logger.info(f"索引 '{index_id}' 有 {len(list(embedders.keys()))} 个 embedder")
+        if embedders:
+            embedder_names = list(embedders.keys())
+            logger.info(f"Embedder 名称: {embedder_names}")
+        
+        return {
+            "success": True,
+            "index_id": index_id,
+            "embedders": embedders
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"获取索引 embedder 配置失败: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get embedders for index '{index_id}': {str(e)}"
+        )
+
 @app.get("/v1/meilisearch/indexes")
 async def get_meilisearch_indexes():
     """
@@ -342,9 +445,10 @@ async def root():
         },
         "endpoints": {
             "embeddings": "POST /v1/embeddings",
-            "meilisearch_config": "POST /v1/meilisearch/configure",
+            "meilisearch_config": "POST /v1/meilisearch/embedder",
             "meilisearch_tasks": "GET /v1/meilisearch/tasks",
             "meilisearch_indexes": "GET /v1/meilisearch/indexes",
+            "index_embedders": "GET /v1/meilisearch/indexes/{index_id}/embedders",
             "health": "GET /health",
             "docs": "GET /docs"
         }

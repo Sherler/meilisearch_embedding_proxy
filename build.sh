@@ -70,7 +70,7 @@ echo "   本机IP: ${LOCAL_IP}"
 echo "   HTTP_PROXY: ${HTTP_PROXY_ARG}"
 echo "   HTTPS_PROXY: ${HTTPS_PROXY_ARG}"
 
-docker build $DOCKER_ARGS $PROXY_ARGS -t meilisearch-embedding-proxy:latest . 
+docker build $DOCKER_ARGS $PROXY_ARGS -t 120.53.87.17:9443/cloud/meilisearch-embedding-proxy:0.1.0 . 
 
 if [ $? -eq 0 ]; then
     echo "✅ Docker 镜像构建成功"

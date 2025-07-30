@@ -30,6 +30,7 @@ Meilisearch Embedding Proxy 是一个高性能的嵌入向量代理服务，用�
 - `API_KEY` - SiliconFlow API 密钥 (必需)
 - `BASE_URL` - API 基础 URL
 - `MODEL_NAME` - 模型名称
+-  `EMBEDDING_DIMENSIONS` - embedding 维数
 - `MAX_TOKEN_LIMIT` - 最大 token 限制
 - `EMBEDDING_DIMENSIONS` - 嵌入维度
 - `HOST` / `PORT` - 服务器配置

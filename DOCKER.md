@@ -93,7 +93,8 @@ docker build -t meilisearch-embedding-proxy .
    
    # 可选配置（可以使用默认值）
    BASE_URL=https://api.siliconflow.cn/v1
-   MODEL_NAME=BAAI/bge-large-zh-v1.5
+   MODEL_NAME=Qwen/Qwen3-Embedding-0.6B
+   EMBEDDING_DIMENSIONS=1024
    MAX_TOKEN_LIMIT=10000
    PORT=8000
    LOG_LEVEL=INFO
