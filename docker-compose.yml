@@ -23,6 +23,10 @@ services:
 
   # Embedding Proxy 服务
   embedding_proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: meilisearch-embedding-proxy:latest
     container_name: embedding_proxy
     ports:
       - "8000:8000"

@@ -13,7 +13,7 @@ LABEL description="Meilisearch Embedding Proxy Server"
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
-    UV_CACHE_DIR=/tmp/uv-cache \
+    UV_CACHE_DIR=/app/.uv-cache \
     HTTP_PROXY=${HTTP_PROXY} \
     HTTPS_PROXY=${HTTPS_PROXY} \
     http_proxy=${HTTP_PROXY} \
@@ -41,8 +41,18 @@ WORKDIR /app
 # 创建非 root 用户
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
+# 创建必要的目录并设置权限（在复制文件之前）
+RUN mkdir -p /app/.uv-cache /app/logs && \
+    chown -R appuser:appuser /app
+
 # 复制构建好的 wheel 包
 COPY dist/meilisearch_embedding_proxy-0.1.0-py3-none-any.whl ./
+
+# 再次确保权限正确
+RUN chown -R appuser:appuser /app
+
+# 切换到非 root 用户进行安装
+USER appuser
 
 # 使用 uv 安装包，指定阿里云 PyPI 源
 RUN uv venv && \
@@ -51,15 +61,6 @@ RUN uv venv && \
         --index-url https://mirrors.aliyun.com/pypi/simple/ \
         --trusted-host mirrors.aliyun.com \
         meilisearch_embedding_proxy-0.1.0-py3-none-any.whl
-
-# 创建日志目录
-RUN mkdir -p /app/logs
-
-# 更改文件所有权
-RUN chown -R appuser:appuser /app
-
-# 切换到非 root 用户
-USER appuser
 
 # 暴露端口
 EXPOSE 8000
@@ -72,10 +73,11 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 ENV HOST=0.0.0.0 \
     PORT=8000 \
     LOG_LEVEL=INFO \
+    UV_CACHE_DIR=/app/.uv-cache \
     HTTP_PROXY="" \
     HTTPS_PROXY="" \
     http_proxy="" \
     https_proxy=""
 
-# 启动命令，使用 uv run 确保正确的虚拟环境执行，并显示详细日志
-CMD ["uv", "run", "--verbose", "--", "meilisearch_embedding_proxy"]
+# 启动命令，使用 uv run 运行应用
+CMD ["uv", "run", "meilisearch_embedding_proxy"]
